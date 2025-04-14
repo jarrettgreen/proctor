@@ -8,7 +8,8 @@ Rails.application.routes.draw do
   resources :surveys do
     # Nested routes for questions
     resources :questions, except: [:index, :show]
-    
+    # Nested route for creating responses
+    resources :responses, only: [:create]    
     # Route for taking a survey
     member do
       get 'take'
@@ -16,6 +17,5 @@ Rails.application.routes.draw do
     end
   end
   
-  # Route for creating responses
-  resources :responses, only: [:create]
+
 end
