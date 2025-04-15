@@ -1,131 +1,43 @@
-# Proctor: Basic Survey Application 
+# Jarrett's thoughts
 
-This is a coding challenge created by DX. It houses a basic survey application that will serve as the basis for the challenge.
+This could have gone a number of different ways. My first inclination was to think about creating a true tree  structure in the database - this would allow for real branching down the line of the survey, not just at the root. Future proof, but introduces complexity out of the gate that might not actually be used. 
 
-## Challenge Description
-The scenario: We want to be able customize questions in the survey depending on the role of the person responding (i.e. Data Engineer, Frontend Engineer, Product Manager, etc.).
+After talking to Abi, the reqs only required root branching. No need for a tree structure. 
 
-Here's what we'd like to see:
-* Implement a way to define the different branches of a survey and the questions that are shown or hidden for each branch
-* Update the respondent experience to collect their role and then display the appropriate questions based on the branch
-* (If time allows) Add a way to analyze the response data between the different branches
+So maybe a wrapper model:
 
-The boilerplate code provides a very basic survey application with the ability to create surveys, add questions, and collect responses. Your job is to extend this functionality to support branching.
+``` mermaid
 
-Any and all existing code or seed data can be edited in any way. Anything that's here is purely to serve as a functional starting point to begin building off of.
+classDiagram
+  class Survey
+  class QuestionGroup
+  class Question
 
-## Evaluation Criteria
-The purpose of this exercise is to evaluate how you would implement a moderately complex feature, consider tradeoffs, and explain your thinking on a real project. We are not evaluating your ability to implement algorithms from scratch — feel free to use tools or libraries that you would reach for in your actual day to day work.
+  Survey -- QuestionGroup : has_many
+  QuestionGroup -- Question : has_many
+```
 
-## Technology Stack
+Ultimately, this seems like a front-end concern if anything, so creating new models, relationships, tables, etc doing it 'the rails way', also seemed overkill. 
 
-- **Backend**: Ruby on Rails 7
-- **Frontend**: React with esbuild
-- **Styling**: Tailwind CSS
-- **Database**: PostgreSQL
+So, without trying to play code golf, I settled on this bare-bones approach. It only adds one new column, one method, and an array of roles and is super easy to reason about. Roles could be more malleable if needed and persisted on each Survey, but I went with the assumption that they don't change. 
 
-## Getting Started
+```mermaid
+classDiagram
+  class Survey {
+      +jsonb question_branches
+      +ROLES[]
+      +questions_for_role(role)
+  }
 
-### Prerequisites
+  class Question {
+      - no changes
+  }
 
-- Ruby 3.1.3 or higher
-- PostgreSQL
-- Node.js (for JavaScript and CSS processing)
+  class Response {
+      - no changes
+  }
 
-### Setup Instructions (macOS)
-
-#### Install Dependencies with Homebrew
-
-1. Install Homebrew (if not already installed)
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
-
-2. Install Ruby via rbenv
-   ```bash
-   brew install rbenv ruby-build
-   echo 'eval "$(rbenv init -)"' >> ~/.zshrc  # or ~/.bash_profile for bash users
-   source ~/.zshrc  # or source ~/.bash_profile for bash users
-   rbenv install 3.1.3
-   rbenv global 3.1.3
-   ruby -v  # Verify installation
-   ```
-
-3. Install PostgreSQL
-   ```bash
-   brew install postgresql@15
-   brew services start postgresql@15
-   ```
-
-4. Install Node.js
-   ```bash
-   # Install nvm (Node Version Manager) for better Node.js version management
-   brew install nvm
-   
-   # Create NVM's working directory if it doesn't exist
-   mkdir -p ~/.nvm
-   
-   # Add NVM to your shell profile
-   echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc
-   echo '[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"' >> ~/.zshrc
-   echo '[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"' >> ~/.zshrc
-   
-   # Source the updated profile
-   source ~/.zshrc
-   
-   # Install and use Node.js version 20 (compatible with the project dependencies)
-   nvm install 20
-   nvm use 20
-   
-   # Verify installation
-   node -v
-   ```
-
-#### Project Setup
-
-1. Clone this repository
-   ```bash
-   git clone <repository-url>
-   cd proctor
-   ```
-
-2. Install Ruby dependencies
-   ```bash
-   gem install bundler
-   bundle install
-   ```
-
-3. Install JavaScript dependencies
-   ```bash
-   npm install
-   ```
-
-4. Setup the database
-   ```bash
-   bin/rails db:create
-   bin/rails db:migrate
-   bin/rails db:seed
-   ```
-
-5. Start the Rails server and build the frontend assets
-   ```bash
-   bin/dev
-   ```
-
-6. Visit `http://localhost:3000` in your browser
-
-## React Components
-
-The application uses React for the frontend. The main components are:
-
-- **SurveyForm**: For creating and editing surveys
-- **QuestionList**: For displaying and managing questions
-- **TakeSurvey**: For taking surveys and submitting responses
-
-These components are located in the `app/javascript/components` directory.
-
-## Submission
-
-Please submit your solution as a .zip file or Github repo with clear instructions on how to run your code. Include any notes or explanations in the README or as comments in your code.
-
-Good luck!
+  Survey -- Question : has_many
+  Survey -- Response : has_many
+  Question --  Response : has_many 
+```
