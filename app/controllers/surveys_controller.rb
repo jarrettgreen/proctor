@@ -16,10 +16,14 @@ class SurveysController < ApplicationController
   def create
     @survey = Survey.new(survey_params)
 
-    if @survey.save
-      redirect_to @survey, notice: 'Survey was successfully created.'
-    else
-      render :new, status: :unprocessable_entity
+    respond_to do |format|
+      if @survey.save
+        format.html { redirect_to @survey, notice: 'Survey was successfully created.' }
+        format.json { render json: { id: @survey.id }, status: :created }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { errors: @survey.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
   
