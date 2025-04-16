@@ -1,6 +1,7 @@
 class SurveysController < ApplicationController
   before_action :set_survey, only: [:show, :edit, :update, :destroy, :take, :submit]
-
+  before_action :set_roles, only: [:take, :edit]
+  
   def index
     @surveys = Survey.all
   end
@@ -15,21 +16,32 @@ class SurveysController < ApplicationController
   def create
     @survey = Survey.new(survey_params)
 
-    if @survey.save
-      redirect_to @survey, notice: 'Survey was successfully created.'
-    else
-      render :new, status: :unprocessable_entity
+    respond_to do |format|
+      if @survey.save
+        format.html { redirect_to @survey, notice: 'Survey was successfully created.' }
+        format.json { render json: { id: @survey.id }, status: :created }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: { errors: @survey.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
   
   def edit
+    @questions = @survey.questions.order(:position)
   end
   
   def update
     if @survey.update(survey_params)
-      redirect_to @survey, notice: 'Survey was successfully updated.'
+      respond_to do |format|
+        format.html { redirect_to @survey, notice: 'Survey was successfully updated.' }
+        format.json { render json: { id: @survey.id }, status: :ok }
+      end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: { errors: @survey.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
   
@@ -61,8 +73,12 @@ class SurveysController < ApplicationController
   def set_survey
     @survey = Survey.find(params[:id])
   end
+
+  def set_roles
+    @roles = Survey::ROLES
+  end
   
   def survey_params
-    params.require(:survey).permit(:title, :description)
+    params.require(:survey).permit(:title, :description, question_branches: {})
   end
 end

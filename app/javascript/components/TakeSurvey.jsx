@@ -101,6 +101,23 @@ const TakeSurvey = (props) => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [role, setRole] = useState('');
+  const [showQuestions, setShowQuestions] = useState(false);
+  const roles = props.roles || [];
+
+  const handleRoleSelect = (selectedRole) => {
+    setRole(selectedRole);
+    setShowQuestions(true);
+  };
+  const formatRoleTitle = (role) => {
+    return role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+  const filteredQuestions = role ? questions.filter(q => {
+    if (!survey.question_branches || !survey.question_branches[role]) {
+      return true;
+    }
+    return survey.question_branches[role].includes(q.id);
+  }) : [];
 
   const handleInputChange = (questionId, value) => {
     setResponses({
@@ -115,7 +132,7 @@ const TakeSurvey = (props) => {
     setErrors([]);
 
     // Validate responses
-    const requiredQuestions = questions.filter(q => q.required);
+    const requiredQuestions = filteredQuestions.filter(q => q.required);
     const missingResponses = requiredQuestions.filter(q => !responses[q.id]);
     
     if (missingResponses.length > 0) {
@@ -320,6 +337,30 @@ const TakeSurvey = (props) => {
     }
   };
 
+  if (!showQuestions) {
+    return (
+      <div className="max-w-md mx-auto">
+        <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
+        <p className="mb-6">{survey.description}</p>
+        
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium mb-4">Select your role</h2>
+          <div className="space-y-3">
+            {roles.map(role => (
+              <button
+                key={role}
+                onClick={() => handleRoleSelect(role)}
+                className="w-full text-left px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                {formatRoleTitle(role)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
@@ -341,8 +382,18 @@ const TakeSurvey = (props) => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
-      <p className="mb-6">{survey.description}</p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">{survey.title}</h1>
+          <p className="text-gray-600">Role: {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+        </div>
+        <button
+          onClick={() => setShowQuestions(false)}
+          className="text-sm text-indigo-600 hover:text-indigo-500"
+        >
+          Change Role
+        </button>
+      </div>
       
       {errors.length > 0 && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -364,7 +415,7 @@ const TakeSurvey = (props) => {
       )}
       
       <form onSubmit={handleSubmit}>
-        {questions.map(question => (
+        {filteredQuestions.map(question => (
           <div key={question.id} className="mb-6 p-4 bg-white shadow rounded">
             {renderQuestion(question)}
           </div>
@@ -390,6 +441,7 @@ const initializeTakeSurvey = () => {
   if (container && !container.hasAttribute('data-react-initialized')) {
     const surveyData = JSON.parse(container.dataset.survey || '{}');
     const questionsData = JSON.parse(container.dataset.questions || '[]');
+    const rolesData = JSON.parse(container.dataset.roles || '[]');
     
     // Mark as initialized to prevent double initialization
     container.setAttribute('data-react-initialized', 'true');
@@ -399,6 +451,7 @@ const initializeTakeSurvey = () => {
       <TakeSurvey 
         survey={surveyData} 
         questions={questionsData}
+        roles={rolesData}
       />
     );
   }
